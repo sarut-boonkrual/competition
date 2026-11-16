@@ -1,0 +1,85 @@
+// left motor
+int left_en = 5;
+int left_in1 = 7;
+int left_in2 = 8;
+
+// rightmotor
+int right_en = 6;
+int right_in1 = 9;
+int right_in2 = 10;
+
+int speed = 150;   
+// 0 - 255
+char cmd;
+//setup
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(left_en, OUTPUT);
+  pinMode(left_in1, OUTPUT);
+  pinMode(left_in2, OUTPUT);
+  pinMode(right_en, OUTPUT);
+  pinMode(right_in1, OUTPUT);
+  pinMode(right_in2, OUTPUT);
+
+  stop_robot();
+}
+//loop
+void loop() {
+  if (Serial.available() > 0) {
+    cmd = Serial.read();
+
+    if (cmd == 'F') forward();
+    else if (cmd == 'B') backward();
+    else if (cmd == 'L') turn_left();
+    else if (cmd == 'R') turn_right();
+    else if (cmd == 'S') stop_robot();
+    else if (cmd == '1') speed = 100;
+    else if (cmd == '2') speed = 150;
+    else if (cmd == '3') speed = 255;
+  }
+}
+
+void forward() {
+  digitalWrite(left_in1, HIGH);
+  digitalWrite(left_in2, LOW);
+  digitalWrite(right_in1, HIGH);
+  digitalWrite(right_in2, LOW);
+  analogWrite(left_en, speed);
+  analogWrite(right_en, speed);
+}
+
+void backward() {
+  digitalWrite(left_in1, LOW);
+  digitalWrite(left_in2, HIGH);
+  digitalWrite(right_in1, LOW);
+  digitalWrite(right_in2, HIGH);
+  analogWrite(left_en, speed);
+  analogWrite(right_en, speed);
+}
+
+void turn_left() {
+ 
+  digitalWrite(left_in1, LOW);
+  digitalWrite(left_in2, HIGH);
+  digitalWrite(right_in1, HIGH);
+  digitalWrite(right_in2, LOW);
+  analogWrite(left_en, speed);
+  analogWrite(right_en, speed);
+}
+
+void turn_right() {
+  
+  digitalWrite(left_in1, HIGH);
+  digitalWrite(left_in2, LOW);
+  digitalWrite(right_in1, LOW);
+  digitalWrite(right_in2, HIGH);
+  analogWrite(left_en, speed);
+  analogWrite(right_en, speed);
+}
+
+void stop_robot() {
+  analogWrite(left_en, 0);
+  analogWrite(right_en, 0);
+}
+
