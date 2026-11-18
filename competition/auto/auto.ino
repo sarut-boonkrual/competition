@@ -4,7 +4,7 @@
  * Left-hand wall following. Stops at a dead end after enough blocks.
  * Uses: function, structure, loop, array, pointer
  *
- * ต่อสาย (ผ่าน Sensor Shield v5):
+ * wire connect (through Sensor Shield v5):
  *   motor L298N : ENA=D5, IN1=D7, IN2=D8, ENB=D6, IN3=D9, IN4=D10
  *   HC-SR04 front  : TRIG=A0, ECHO=A1
  *   HC-SR04 left  : TRIG=A2, ECHO=A3
