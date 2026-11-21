@@ -11,54 +11,54 @@
  *   HC-SR04 right   : TRIG=A4, ECHO=A5
  */
 
-// ---------- Options ----------
-const bool SENSOR_TEST_MODE = false;        // true = stop, only type sensor value in Serial Monitor
-const int  MIN_BLOCKS_BEFORE_STOP = 4;      // must move at least one block, so it will stop at dead end
-const unsigned long MAX_RUN_MS = 90000UL;   // safety: stop by itself when time ran out
 
-// ---------- Pin ----------
-const int L_PWM = 5, L_IN1 = 7, L_IN2 = 8;     // same as prototype.ino
+const bool SENSOR_TEST_MODE = false;
+const int  MIN_BLOCKS_BEFORE_STOP = 4;
+const unsigned long MAX_RUN_MS = 90000UL;
+
+
+const int L_PWM = 5, L_IN1 = 7, L_IN2 = 8;
 const int R_PWM = 6, R_IN1 = 9, R_IN2 = 10;
 const int TRIG_F = A0, ECHO_F = A1;
 const int TRIG_L = A2, ECHO_L = A3;
 const int TRIG_R = A4, ECHO_R = A5;
 
-// if the wheel reversely spinning, change value to -1
+
 const int L_DIR = 1;
 const int R_DIR = 1;
 
-// ---------- Calibration (beginning value, must tune with the real bot) ----------
-const int   SPEED               = 150;   // 0-255
-const int   MS_PER_BLOCK        = 700;   // time for moving one block (20 cm)
-const int   MS_TURN_90          = 420;   // time for ninety degree turn
-const int   WALL_CM             = 12;    // closer = wall beside
-const int   FRONT_OPEN_CM       = 15;    // furthur = front open
-const int   FRONT_STOP_CM       = 5;     // closer = stop moving
-const int   TURN_FRONT_CLEAR_CM = 4;     // gap between bot and wall before moving
-const int   SIDE_TARGET_CM      = 4;     // gap from sensor to side walls when bot is in the middle
-const int   BACKUP_MS           = 150;   // short backdash time for turning space
-const float KP                  = 6.0;   // gain, keep it middle
+
+const int   SPEED               = 150;
+const int   MS_PER_BLOCK        = 700;
+const int   MS_TURN_90          = 420;
+const int   WALL_CM             = 12;
+const int   FRONT_OPEN_CM       = 15;
+const int   FRONT_STOP_CM       = 5;
+const int   TURN_FRONT_CLEAR_CM = 4;
+const int   SIDE_TARGET_CM      = 4;
+const int   BACKUP_MS           = 150;
+const float KP                  = 6.0;
 const int   MAX_CORR            = 60;
 
-// ---------- Structure ----------
+
 struct Sensors {
   int front;
   int left;
   int right;
 };
 
-// ---------- Ultrasonic + median filter (array) ----------
+
 int readUltrasonicOnce(int trig, int echo) {
   digitalWrite(trig, LOW);  delayMicroseconds(2);
   digitalWrite(trig, HIGH); delayMicroseconds(10);
   digitalWrite(trig, LOW);
   long us = pulseIn(echo, HIGH, 20000);
-  if (us == 0) return 200;             // no echo = wide open
+  if (us == 0) return 200;
   return (int)(us * 0.034 / 2);
 }
 
 int readUltrasonic(int trig, int echo) {
-  int v[3];                            // array keep 3 values
+  int v[3];
   for (int i = 0; i < 3; i++) {
     v[i] = readUltrasonicOnce(trig, echo);
     delay(5);
@@ -68,14 +68,14 @@ int readUltrasonic(int trig, int echo) {
   return v[2];
 }
 
-// read all the sensors through pointer
+
 void readSensors(Sensors *s) {
   s->front = readUltrasonic(TRIG_F, ECHO_F);
   s->left  = readUltrasonic(TRIG_L, ECHO_L);
   s->right = readUltrasonic(TRIG_R, ECHO_R);
 }
 
-// ---------- Motor ----------
+
 void setMotor(int pwm, int in1, int in2, int speed) {
   if (speed > 0)      { digitalWrite(in1, HIGH); digitalWrite(in2, LOW);  }
   else if (speed < 0) { digitalWrite(in1, LOW);  digitalWrite(in2, HIGH); }
@@ -101,7 +101,7 @@ void backUp(int ms) {
   delay(100);
 }
 
-// retreat for giving some space to turn (front of bot far from wheel)
+
 void makeRoomToTurn() {
   Sensors s;
   for (int i = 0; i < 8; i++) {
@@ -111,7 +111,7 @@ void makeRoomToTurn() {
   }
 }
 
-// ---------- move forward 1 block keep it middle ----------
+
 void forwardOneBlock() {
   Sensors s;
   unsigned long start = millis();
@@ -126,13 +126,13 @@ void forwardOneBlock() {
     else if (s.right < WALL_CM) error = SIDE_TARGET_CM - s.right;
 
     int corr = constrain((int)(KP * error), -MAX_CORR, MAX_CORR);
-    drive(SPEED - corr, SPEED + corr);   // error > 0 = right lean -> turn a bit left
+    drive(SPEED - corr, SPEED + corr);
   }
   stopMotors();
   delay(120);
 }
 
-// retreat from dead end till it found path and turn backward
+
 void backOutOfDeadEnd() {
   Sensors s;
   for (int i = 0; i < 8; i++) {
@@ -145,10 +145,10 @@ void backOutOfDeadEnd() {
 
 void finish() {
   stopMotors();
-  while (true);   // End
+  while (true);
 }
 
-// ---------- State ----------
+
 int blocksMoved = 0;
 unsigned long startTime = 0;
 
@@ -160,11 +160,11 @@ void setup() {
   pinMode(TRIG_L, OUTPUT); pinMode(ECHO_L, INPUT);
   pinMode(TRIG_R, OUTPUT); pinMode(ECHO_R, INPUT);
   stopMotors();
-  delay(2000);           // Time for place the bot at the starting point
+  delay(2000);
   startTime = millis();
 }
 
-// ---------- Left-hand wall following ----------
+
 void loop() {
   Sensors s;
 
@@ -194,7 +194,7 @@ void loop() {
     makeRoomToTurn();
     turnRight90();
   } else {
-    // all 3 side closed: if it moves far enough, means it reach the parking zone
+    
     if (blocksMoved >= MIN_BLOCKS_BEFORE_STOP) finish();
     backOutOfDeadEnd();
   }
