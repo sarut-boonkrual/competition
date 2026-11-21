@@ -1,85 +1,139 @@
-// left motor
-int left_en = 5;
-int left_in1 = 7;
-int left_in2 = 8;
+import gamepad
+from cyberpi import *
+import time
 
-// rightmotor
-int right_en = 6;
-int right_in1 = 9;
-int right_in2 = 10;
+speed = 100       
+min_speed = 10
+max_speed = 220
+speed_step = 55
 
-int speed = 150;   
-// 0 - 255
-char cmd;
-//setup
-void setup() {
-  Serial.begin(9600);
+servo1 = 's3'      
+servo2 = 's4'
 
-  pinMode(left_en, OUTPUT);
-  pinMode(left_in1, OUTPUT);
-  pinMode(left_in2, OUTPUT);
-  pinMode(right_en, OUTPUT);
-  pinMode(right_in1, OUTPUT);
-  pinMode(right_in2, OUTPUT);
+servo1_angle = 90  
+servo2_angle = 90
+servo_step = 15     
 
-  stop_robot();
-}
-//loop
-void loop() {
-  if (Serial.available() > 0) {
-    cmd = Serial.read();
+dc1_port = 'm1'     
+dc2_port = 'm2'
+dc1_power = 25    
+dc2_power = 25
 
-    if (cmd == 'F') forward();
-    else if (cmd == 'B') backward();
-    else if (cmd == 'L') turn_left();
-    else if (cmd == 'R') turn_right();
-    else if (cmd == 'S') stop_robot();
-    else if (cmd == '1') speed = 100;
-    else if (cmd == '2') speed = 150;
-    else if (cmd == '3') speed = 255;
-  }
-}
+last_move = ''     
+last_dc1 = ''    
+last_dc2 = ''
 
-void forward() {
-  digitalWrite(left_in1, HIGH);
-  digitalWrite(left_in2, LOW);
-  digitalWrite(right_in1, HIGH);
-  digitalWrite(right_in2, LOW);
-  analogWrite(left_en, speed);
-  analogWrite(right_en, speed);
-}
+def print_move(name):
+    global last_move
+    if name != last_move:
+        console.println('move: ' + name + ' spd ' + str(speed))
+        last_move = name
 
-void backward() {
-  digitalWrite(left_in1, LOW);
-  digitalWrite(left_in2, HIGH);
-  digitalWrite(right_in1, LOW);
-  digitalWrite(right_in2, HIGH);
-  analogWrite(left_en, speed);
-  analogWrite(right_en, speed);
-}
+def print_dc1(name):
+    global last_dc1
+    if name != last_dc1:
+        console.println('dc1: ' + name)
+        last_dc1 = name
 
-void turn_left() {
- 
-  digitalWrite(left_in1, LOW);
-  digitalWrite(left_in2, HIGH);
-  digitalWrite(right_in1, HIGH);
-  digitalWrite(right_in2, LOW);
-  analogWrite(left_en, speed);
-  analogWrite(right_en, speed);
-}
+def print_dc2(name):
+    global last_dc2
+    if name != last_dc2:
+        console.println('dc2: ' + name)
+        last_dc2 = name
 
-void turn_right() {
-  
-  digitalWrite(left_in1, HIGH);
-  digitalWrite(left_in2, LOW);
-  digitalWrite(right_in1, LOW);
-  digitalWrite(right_in2, HIGH);
-  analogWrite(left_en, speed);
-  analogWrite(right_en, speed);
-}
+console.println('start')
+mbot2.servo_set(servo1_angle, servo1)
+mbot2.servo_set(servo2_angle, servo2)
+mbot2.motor_set(0, dc1_port)
+mbot2.motor_set(0, dc2_port)
+console.println('servos at 90')
+time.sleep(1)
+console.println('speed: ' + str(speed))
 
-void stop_robot() {
-  analogWrite(left_en, 0);
-  analogWrite(right_en, 0);
-}
+while True:
 
+    # change speed
+    if gamepad.is_key_pressed('Start'):
+        speed = speed + speed_step
+        if speed > max_speed:
+            speed = max_speed
+        console.println('speed up: ' + str(speed))
+        time.sleep(0.25)
+
+    if gamepad.is_key_pressed('Select'):
+        speed = speed - speed_step
+        if speed < min_speed:
+            speed = min_speed
+        console.println('speed down: ' + str(speed))
+        time.sleep(0.25)
+
+    # servo 1 with l1 and l2
+    if gamepad.is_key_pressed('L1'):
+        servo1_angle = servo1_angle + servo_step
+        if servo1_angle > 180:
+            servo1_angle = 180
+        mbot2.servo_set(servo1_angle, servo1)
+        console.println('L1 servo1: ' + str(servo1_angle))
+
+    if gamepad.is_key_pressed('L2'):
+        servo1_angle = servo1_angle - servo_step
+        if servo1_angle < 0:
+            servo1_angle = 0
+        mbot2.servo_set(servo1_angle, servo1)
+        console.println('L2 servo1: ' + str(servo1_angle))
+
+    # servo 2 with r1 and r2
+    if gamepad.is_key_pressed('R1'):
+        servo2_angle = servo2_angle + servo_step
+        if servo2_angle > 180:
+            servo2_angle = 180
+        mbot2.servo_set(servo2_angle, servo2)
+        console.println('R1 servo2: ' + str(servo2_angle))
+
+    if gamepad.is_key_pressed('R2'):
+        servo2_angle = servo2_angle - servo_step
+        if servo2_angle < 0:
+            servo2_angle = 0
+        mbot2.servo_set(servo2_angle, servo2)
+        console.println('R2 servo2: ' + str(servo2_angle))
+
+    # dc motor 1 with n2 and n3
+    if gamepad.is_key_pressed('N2'):
+        mbot2.motor_set(dc1_power, dc1_port)
+        print_dc1('forward')
+    elif gamepad.is_key_pressed('N3'):
+        mbot2.motor_set(-dc1_power, dc1_port)
+        print_dc1('reverse')
+    else:
+        mbot2.motor_set(0, dc1_port)
+        print_dc1('stop')
+
+    # dc motor 2 with n4 and n1
+    if gamepad.is_key_pressed('N4'):
+        mbot2.motor_set(dc2_power, dc2_port)
+        print_dc2('forward')
+    elif gamepad.is_key_pressed('N1'):
+        mbot2.motor_set(-dc2_power, dc2_port)
+        print_dc2('reverse')
+    else:
+        mbot2.motor_set(0, dc2_port)
+        print_dc2('stop')
+
+   
+    if gamepad.is_key_pressed('Up'):
+        mbot2.forward(speed)
+        print_move('forward')
+    elif gamepad.is_key_pressed('Down'):
+        mbot2.backward(speed)
+        print_move('backward')
+    elif gamepad.is_key_pressed('Left'):
+        mbot2.turn_left(speed)
+        print_move('left')
+    elif gamepad.is_key_pressed('Right'):
+        mbot2.turn_right(speed)
+        print_move('right')
+    else:
+        mbot2.EM_stop('all')
+        print_move('stop')
+
+    time.sleep(0.05)
